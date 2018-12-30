@@ -1,0 +1,1275 @@
+diff -r ../second-edition/second-edition/src/ch12-00-an-io-project.md src/ch12-00-an-io-project.md
+31c31
+< * Organizing code (using what you learned in modules, Chapter 7)
+---
+> * Organizing code (using what you learned about modules in Chapter 7)
+diff -r ../second-edition/second-edition/src/ch12-01-accepting-command-line-arguments.md src/ch12-01-accepting-command-line-arguments.md
+8c8
+< $ cargo new --bin minigrep
+---
+> $ cargo new minigrep
+31,36c31,36
+< `std::env::args`. This function returns an *iterator* of the command line
+< arguments that were given to `minigrep`. We haven’t discussed iterators yet
+< (we’ll cover them fully in Chapter 13), but for now, you only need to know two
+< details about iterators: iterators produce a series of values, and we can call
+< the `collect` method on an iterator to turn it into a collection, such as a
+< vector, containing all the elements the iterator produces.
+---
+> `std::env::args`. This function returns an iterator of the command line
+> arguments that were given to `minigrep`. We’ll cover iterators fully in Chapter
+> 13. For now, you only need to know two details about iterators: iterators
+> produce a series of values, and we can call the `collect` method on an iterator
+> to turn it into a collection, such as a vector, containing all the elements the
+> iterator produces.
+diff -r ../second-edition/second-edition/src/ch12-02-reading-a-file.md src/ch12-02-reading-a-file.md
+28c28
+< With the text in place, edit *src/main.rs* and add code to open the file, as
+---
+> With the text in place, edit *src/main.rs* and add code to read the file, as
+35,36c35
+< use std::fs::File;
+< use std::io::prelude::*;
+---
+> use std::fs;
+48,52c47,48
+<     let mut f = File::open(filename).expect("file not found");
+<
+<     let mut contents = String::new();
+<     f.read_to_string(&mut contents)
+<         .expect("something went wrong reading the file");
+---
+>     let contents = fs::read_to_string(filename)
+>         .expect("Something went wrong reading the file");
+61,75c57,61
+< First, we add some more `use` statements to bring in relevant parts of the
+< standard library: we need `std::fs::File` to handle files, and
+< `std::io::prelude::*` contains various useful traits for doing I/O, including
+< file I/O. In the same way that Rust has a general prelude that brings certain
+< types and functions into scope automatically, the `std::io` module has its own
+< prelude of common types and functions you’ll need when working with I/O. Unlike
+< with the default prelude, we must explicitly add a `use` statement for the
+< prelude from `std::io`.
+<
+< In `main`, we’ve added three statements: first, we get a mutable handle to the
+< file by calling the `File::open` function and passing it the value of the
+< `filename` variable. Second, we create a variable called `contents` and set it
+< to a mutable, empty `String`. This will hold the content of the file after we
+< read it in. Third, we call `read_to_string` on our file handle and pass a
+< mutable reference to `contents` as an argument.
+---
+> First, we add another `use` statement to bring in a relevant part of the
+> standard library: we need `std::fs` to handle files.
+>
+> In `main`, we’ve added a new statement: `fs::read_to_string` will take the
+> `filename`, open that file, and then return `Result<String>` with its contents.
+77c63
+< After those lines, we’ve again added a temporary `println!` statement that
+---
+> After that line, we’ve again added a temporary `println!` statement that
+diff -r ../second-edition/second-edition/src/ch12-03-improving-error-handling-and-modularity.md src/ch12-03-improving-error-handling-and-modularity.md
+7c7
+< opens files. For such a small function, this isn’t a major problem. However, if
+---
+> reads files. For such a small function, this isn’t a major problem. However, if
+15,19c15,19
+< are configuration variables to our program, variables like `f` and `contents`
+< are used to perform the program’s logic. The longer `main` becomes, the more
+< variables we’ll need to bring into scope; the more variables we have in scope,
+< the harder it will be to keep track of the purpose of each. It’s best to group
+< the configuration variables into one structure to make their purpose clear.
+---
+> are configuration variables to our program, variables like `contents` are used
+> to perform the program’s logic. The longer `main` becomes, the more variables
+> we’ll need to bring into scope; the more variables we have in scope, the harder
+> it will be to keep track of the purpose of each. It’s best to group the
+> configuration variables into one structure to make their purpose clear.
+22,26c22,26
+< opening the file fails, but the error message just prints `file not found`.
+< Opening a file can fail in a number of ways besides the file being missing: for
+< example, the file might exist, but we might not have permission to open it.
+< Right now, if we’re in that situation, we’d print the `file not found` error
+< message, which would give the user the wrong information!
+---
+> reading the file fails, but the error message just prints `something went
+> wrong`. Reading a file can fail in a number of ways: for example, the file
+> could be missing, or we might not have permission to open it. Right now,
+> regardless of the situation, we’d print the `something went wrong` error
+> message, which wouldn’t give the user any information!
+128,129c128,129
+< > Note: Some people call this anti-pattern of using primitive values when a
+< > complex type would be more appropriate *primitive obsession*.
+---
+> > Note: Using primitive values when a complex type would be more appropriate is
+> > an anti-pattern known as *primitive obsession*.
+137c137
+< # use std::fs::File;
+---
+> # use std::fs;
+147c147,148
+<     let mut f = File::open(config.filename).expect("file not found");
+---
+>     let contents = fs::read_to_string(config.filename)
+>         .expect("Something went wrong reading the file");
+277c278
+< but the index is 1', src/main.rs:29:21
+---
+> but the index is 1', src/main.rs:25:21
+306c307
+< This code is similar to the `Guess::new` function we wrote in Listing 9-9,
+---
+> This code is similar to the `Guess::new` function we wrote in Listing 9-10,
+322c323
+< thread 'main' panicked at 'not enough arguments', src/main.rs:30:12
+---
+> thread 'main' panicked at 'not enough arguments', src/main.rs:26:13
+328c329
+< the technique we used in Listing 9-9 isn’t the best to use here: a call to
+---
+> the technique we used in Listing 9-10 isn’t the best to use here: a call to
+369,371c370,373
+< success case and a `&'static str` in the error case. Recall from “The Static
+< Lifetime” section in Chapter 10 that `&'static str` is the type of string
+< literals, which is our error message type for now.
+---
+> success case and a `&'static str` in the error case. Recall from [“The Static
+> Lifetime”][the-static-lifetime]<!-- ignore --> section in Chapter 10 that
+> `&'static str` is the type of string literals, which is our error message type
+> for now.
+423,429c425,431
+< We’ve added a new `use` line to import `process` from the standard library. The
+< code in the closure that will be run in the error case is only two lines: we
+< print the `err` value and then call `process::exit`. The `process::exit`
+< function will stop the program immediately and return the number that was
+< passed as the exit status code. This is similar to the `panic!`-based handling
+< we used in Listing 12-8, but we no longer get all the extra output. Let’s try
+< it:
+---
+> We’ve added a new `use` line to bring `process` from the standard library into
+> scope. The code in the closure that will be run in the error case is only two
+> lines: we print the `err` value and then call `process::exit`. The
+> `process::exit` function will stop the program immediately and return the
+> number that was passed as the exit status code. This is similar to the
+> `panic!`-based handling we used in Listing 12-8, but we no longer get all the
+> extra output. Let’s try it:
+468,471c470
+<     let mut f = File::open(config.filename).expect("file not found");
+<
+<     let mut contents = String::new();
+<     f.read_to_string(&mut contents)
+---
+>     let contents = fs::read_to_string(config.filename)
+504,508c503,504
+< fn run(config: Config) -> Result<(), Box<Error>> {
+<     let mut f = File::open(config.filename)?;
+<
+<     let mut contents = String::new();
+<     f.read_to_string(&mut contents)?;
+---
+> fn run(config: Config) -> Result<(), Box<dyn Error>> {
+>     let contents = fs::read_to_string(config.filename)?;
+520c516
+< the `run` function to `Result<(), Box<Error>>`. This function previously
+---
+> the `run` function to `Result<(), Box<dyn Error>>`. This function previously
+524,534c520,531
+< For the error type, we used the *trait object* `Box<Error>` (and we’ve brought
+< `std::error::Error` into scope with a `use` statement at the top). We’ll cover
+< trait objects in Chapter 17. For now, just know that `Box<Error>` means the
+< function will return a type that implements the `Error` trait, but we don’t
+< have to specify what particular type the return value will be. This gives us
+< flexibility to return error values that may be of different types in different
+< error cases.
+<
+< Second, we’ve removed the calls to `expect` in favor of the `?` operator, as we
+< talked about in Chapter 9. Rather than `panic!` on an error, the `?` operator
+< will return the error value from the current function for the caller to handle.
+---
+> For the error type, we used the *trait object* `Box<dyn Error>` (and we’ve
+> brought `std::error::Error` into scope with a `use` statement at the top).
+> We’ll cover trait objects in Chapter 17. For now, just know that `Box<dyn
+> Error>` means the function will return a type that implements the `Error`
+> trait, but we don’t have to specify what particular type the return value
+> will be. This gives us flexibility to return error values that may be of
+> different types in different error cases. This is what the `dyn` means, it’s
+> short for “dynamic.”
+>
+> Second, we’ve removed the call to `expect` in favor of the `?` operator, as we
+> talked about in Chapter 9. Rather than `panic!` on an error, `?` will return
+> the error value from the current function for the caller to handle.
+546,547c543,544
+< warning: unused `std::result::Result` which must be used
+<   --> src/main.rs:18:5
+---
+> warning: unused `std::result::Result` that must be used
+>   --> src/main.rs:17:5
+549c546
+< 18 |     run(config);
+---
+> 17 |     run(config);
+551c548,550
+< = note: #[warn(unused_must_use)] on by default
+---
+>    |
+>    = note: #[warn(unused_must_use)] on by default
+>    = note: this `Result` may be an `Err` variant, which should be handled
+613,614c612
+< use std::fs::File;
+< use std::io::prelude::*;
+---
+> use std::fs;
+627c625
+< pub fn run(config: Config) -> Result<(), Box<Error>> {
+---
+> pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
+645,646d642
+< extern crate minigrep;
+<
+660,661c656,657
+< <span class="caption">Listing 12-14: Bringing the `minigrep` crate into the
+< scope of *src/main.rs*</span>
+---
+> <span class="caption">Listing 12-14: Using the `minigrep` library crate in
+> *src/main.rs*</span>
+663,667c659,663
+< To bring the library crate into the binary crate, we use `extern crate
+< minigrep`. Then we add a `use minigrep::Config` line to bring the `Config` type
+< into scope, and we prefix the `run` function with our crate name. Now all the
+< functionality should be connected and should work. Run the program with `cargo
+< run` and make sure everything works correctly.
+---
+> We add a `use minigrep::Config` line to bring the `Config` type from the
+> library crate into the binary crate's scope, and we prefix the `run` function
+> with our crate name. Now all the functionality should be connected and should
+> work. Run the program with `cargo run` and make sure everything works
+> correctly.
+diff -r ../second-edition/second-edition/src/ch12-04-testing-the-librarys-functionality.md src/ch12-04-testing-the-librarys-functionality.md
+34c34
+< Then, in *src/lib.rs*, we’ll add a `test` module with a test function, as we
+---
+> Then, in *src/lib.rs*, we’ll add a `tests` module with a test function, as we
+43c43
+< # fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
+---
+> # pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
+48c48
+< mod test {
+---
+> mod tests {
+114c114
+<   |                                                   ^ expected lifetime
+---
+>   |                                                       ^ expected lifetime
+141c142
+< test test::one_result ... FAILED
+---
+> test tests::one_result ... FAILED
+145,146c146,147
+< ---- test::one_result stdout ----
+<         thread 'test::one_result' panicked at 'assertion failed: `(left ==
+---
+> ---- tests::one_result stdout ----
+>         thread 'tests::one_result' panicked at 'assertion failed: `(left ==
+154c155
+<     test::one_result
+---
+>     tests::one_result
+255c256
+< test test::one_result ... ok
+---
+> test tests::one_result ... ok
+279,283c280,281
+< pub fn run(config: Config) -> Result<(), Box<Error>> {
+<     let mut f = File::open(config.filename)?;
+<
+<     let mut contents = String::new();
+<     f.read_to_string(&mut contents)?;
+---
+> pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
+>     let contents = fs::read_to_string(config.filename)?;
+diff -r ../second-edition/second-edition/src/ch12-05-working-with-environment-variables.md src/ch12-05-working-with-environment-variables.md
+23c23
+< mod test {
+---
+> mod tests {
+106c106
+< whether the user’s query is `"rust"`, `"RUST"`, `"Rust:"`, or `"rUsT"`, we’ll
+---
+> whether the user’s query is `"rust"`, `"RUST"`, `"Rust"`, or `"rUsT"`, we’ll
+126,127c126,127
+< test test::case_insensitive ... ok
+< test test::case_sensitive ... ok
+---
+> test tests::case_insensitive ... ok
+> test tests::case_sensitive ... ok
+158c158
+< # use std::fs::File;
+---
+> # use std::fs::{self, File};
+161c161
+< # fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
+---
+> # pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
+169c169
+< # struct Config {
+---
+> # pub struct Config {
+175,179c175,176
+< pub fn run(config: Config) -> Result<(), Box<Error>> {
+<     let mut f = File::open(config.filename)?;
+<
+<     let mut contents = String::new();
+<     f.read_to_string(&mut contents)?;
+---
+> pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
+>     let contents = fs::read_to_string(config.filename)?;
+238c235
+< variable. The `env::var` function returns a `Result` that will be the successful
+---
+> variable. The `env::var` method returns a `Result` that will be the successful
+diff -r ../second-edition/second-edition/src/ch13-01-closures.md src/ch13-01-closures.md
+472,475c473,476
+< > Note: Functions implement all three of the `Fn` traits too. If what we want
+< > to do doesn’t require capturing a value from the environment, we can use a
+< > function rather than a closure where we need something that implements an `Fn`
+< > trait.
+---
+> > Note: Functions can implement all three of the `Fn` traits too. If what we
+> > want to do doesn’t require capturing a value from the environment, we can use
+> > a function rather than a closure where we need something that implements an
+> > `Fn` trait.
+diff -r ../second-edition/second-edition/src/ch13-02-iterators.md src/ch13-02-iterators.md
+61c61
+< pub trait Iterator {
+---
+> trait Iterator {
+diff -r ../second-edition/second-edition/src/ch13-03-improving-our-io-project.md src/ch13-03-improving-our-io-project.md
+76,78c76,78
+< We’ll change the start of the `main` function that we had in Listing 12-24 at
+< to the code in Listing 13-25. This won’t compile until we update `Config::new`
+< as well.
+---
+> We’ll change the start of the `main` function that we had in Listing 12-24 to
+> the code in Listing 13-25. This won’t compile until we update `Config::new` as
+> well.
+diff -r ../second-edition/second-edition/src/ch14-02-publishing-to-crates-io.md src/ch14-02-publishing-to-crates-io.md
+212c212
+<     use kinds::*;
+---
+>     use crate::kinds::*;
+217a218
+> #         SecondaryColor::Orange
+219a221
+> # fn main() {}
+238,240c240,242
+< import the items from `art`, specifying the module structure that’s currently
+< defined. Listing 14-4 shows an example of a crate that uses the `PrimaryColor`
+< and `mix` items from the `art` crate:
+---
+> bring the items from `art` into scope, specifying the module structure that’s
+> currently defined. Listing 14-4 shows an example of a crate that uses the
+> `PrimaryColor` and `mix` items from the `art` crate:
+245,246d246
+< extern crate art;
+<
+282,284c282,284
+< pub use kinds::PrimaryColor;
+< pub use kinds::SecondaryColor;
+< pub use utils::mix;
+---
+> pub use self::kinds::PrimaryColor;
+> pub use self::kinds::SecondaryColor;
+> pub use self::utils::mix;
+314,315d313
+< extern crate art;
+<
+369,371c367,370
+< with that name. Search for the name you want to use on the site to find out
+< whether it has been used. If it hasn’t, edit the name in the *Cargo.toml* file
+< under `[package]` to use the name for publishing, like so:
+---
+> with that name. Before attempting to publish a crate, search for the name you
+> want to use on the site. If the name has been used by another crate, you will
+> need to find another name and edit the `name` field in the *Cargo.toml* file
+> under the `[package]` section to use the new name for publishing, like so:
+435a435
+> edition = "2018"
+diff -r ../second-edition/second-edition/src/ch14-03-cargo-workspaces.md src/ch14-03-cargo-workspaces.md
+47c47
+< $ cargo new --bin adder
+---
+> $ cargo new adder
+95c95
+< $ cargo new add-one
+---
+> $ cargo new add-one --lib
+141,143c141,143
+< crate. Open the *adder/src/main.rs* file and add an `extern crate` line at
+< the top to bring the new `add-one` library crate into scope. Then change the
+< `main` function to call the `add_one` function, as in Listing 14-7:
+---
+> crate. Open the *adder/src/main.rs* file and add an `use` line at the top to
+> bring the new `add-one` library crate into scope. Then change the `main`
+> function to call the `add_one` function, as in Listing 14-7.
+148c148
+< extern crate add_one;
+---
+> use add_one;
+203,205c203,205
+< We can now add `extern crate rand;` to the *add-one/src/lib.rs* file, and
+< building the whole workspace by running `cargo build` in the *add* directory
+< will bring in and compile the `rand` crate:
+---
+> We can now add `use rand;` to the *add-one/src/lib.rs* file, and building the
+> whole workspace by running `cargo build` in the *add* directory will bring in
+> and compile the `rand` crate:
+232c232
+< 1 | extern crate rand;
+---
+> 1 | use rand;
+diff -r ../second-edition/second-edition/src/ch14-04-installing-binaries.md src/ch14-04-installing-binaries.md
+15c15
+< root’s *bin* folder. If you installed Rust using `rustup` and don’t have any
+---
+> root’s *bin* folder. If you installed Rust using *rustup.rs* and don’t have any
+diff -r ../second-edition/second-edition/src/ch15-01-box.md src/ch15-01-box.md
+130c132
+< use List::{Cons, Nil};
+---
+> use crate::List::{Cons, Nil};
+241c243
+< use List::{Cons, Nil};
+---
+> use crate::List::{Cons, Nil};
+diff -r ../second-edition/second-edition/src/ch15-02-deref.md src/ch15-02-deref.md
+16a17,21
+> > Note: there's one big difference between the `MyBox<T>` type we're about to
+> > build and the real `Box<T>`: our version will not store its data on the heap.
+> > We are focusing this example on `Deref`, so where the data is actually stored
+> > is less important than the pointer-like behavior.
+>
+50,51c55
+< error[E0277]: the trait bound `{integer}: std::cmp::PartialEq<&{integer}>` is
+< not satisfied
+---
+> error[E0277]: can't compare `{integer}` with `&{integer}`
+55c59
+<   |     ^^^^^^^^^^^^^^^^^ can't compare `{integer}` with `&{integer}`
+---
+>   |     ^^^^^^^^^^^^^^^^^ no implementation for `{integer} == &{integer}`
+57,58c61
+<   = help: the trait `std::cmp::PartialEq<&{integer}>` is not implemented for
+<   `{integer}`
+---
+>   = help: the trait `std::cmp::PartialEq<&{integer}>` is not implemented for `{integer}`
+209,210c212,213
+< The reason the `deref` method returns a reference to a value and that the plain
+< dereference outside the parentheses in `*(y.deref())` is still necessary is the
+---
+> The reason the `deref` method returns a reference to a value, and that the plain
+> dereference outside the parentheses in `*(y.deref())` is still necessary, is the
+diff -r ../second-edition/second-edition/src/ch15-03-drop.md src/ch15-03-drop.md
+53,54c53,54
+< The `Drop` trait is included in the prelude, so we don’t need to import it. We
+< implement the `Drop` trait on `CustomSmartPointer` and provide an
+---
+> The `Drop` trait is included in the prelude, so we don’t need to bring it into
+> scope. We implement the `Drop` trait on `CustomSmartPointer` and provide an
+diff -r ../second-edition/second-edition/src/ch15-04-rc.md src/ch15-04-rc.md
+59c59
+< use List::{Cons, Nil};
+---
+> use crate::List::{Cons, Nil};
+118c118
+< use List::{Cons, Nil};
+---
+> use crate::List::{Cons, Nil};
+164c164
+< # use List::{Cons, Nil};
+---
+> # use crate::List::{Cons, Nil};
+diff -r ../second-edition/second-edition/src/ch15-05-interior-mutability.md src/ch15-05-interior-mutability.md
+164,168c164
+<         if percentage_of_max >= 0.75 && percentage_of_max < 0.9 {
+<             self.messenger.send("Warning: You've used up over 75% of your quota!");
+<         } else if percentage_of_max >= 0.9 && percentage_of_max < 1.0 {
+<             self.messenger.send("Urgent warning: You've used up over 90% of your quota!");
+<         } else if percentage_of_max >= 1.0 {
+---
+>         if percentage_of_max >= 1.0 {
+169a166,169
+>         } else if percentage_of_max >= 0.9 {
+>              self.messenger.send("Urgent warning: You've used up over 90% of your quota!");
+>         } else if percentage_of_max >= 0.75 {
+>             self.messenger.send("Warning: You've used up over 75% of your quota!");
+422c422
+< use List::{Cons, Nil};
+---
+> use crate::List::{Cons, Nil};
+diff -r ../second-edition/second-edition/src/ch15-06-reference-cycles.md src/ch15-06-reference-cycles.md
+27c27
+< use List::{Cons, Nil};
+---
+> use crate::List::{Cons, Nil};
+37,38c37,38
+<         match *self {
+<             Cons(_, ref item) => Some(item),
+---
+>         match self {
+>             Cons(_, item) => Some(item),
+48c48
+< We’re using another variation of the `List` definition in Listing 15-5. The
+---
+> We’re using another variation of the `List` definition in Listing 15-25. The
+64c64
+< # use List::{Cons, Nil};
+---
+> # use crate::List::{Cons, Nil};
+75,76c75,76
+< #         match *self {
+< #             Cons(_, ref item) => Some(item),
+---
+> #         match self {
+> #             Cons(_, item) => Some(item),
+136,137c136,137
+< will try to drop `b` first, which will decrease the count in each of the
+< `Rc<List>` instances in `a` and `b` by 1.
+---
+> will try to drop `b` first, which will decrease the count of the `Rc<List>`
+> instance in `b` by 1.
+diff -r ../second-edition/second-edition/src/ch17-01-what-is-oo.md src/ch17-01-what-is-oo.md
+14c14
+< Enoch Gamma, Richard Helm, Ralph Johnson, and John Vlissides (Addison-Wesley
+---
+> Erich Gamma, Richard Helm, Ralph Johnson, and John Vlissides (Addison-Wesley
+104,108c104,108
+< The public methods `add`, `remove`, and `average` are the only ways to modify
+< an instance of `AveragedCollection`. When an item is added to `list` using the
+< `add` method or removed using the `remove` method, the implementations of each
+< call the private `update_average` method that handles updating the `average`
+< field as well.
+---
+> The public methods `add`, `remove`, and `average` are the only ways to access
+> or modify data in an instance of `AveragedCollection`. When an item is added
+> to `list` using the `add` method or removed using the `remove` method, the
+> implementations of each call the private `update_average` method that handles
+> updating the `average` field as well.
+diff -r ../second-edition/second-edition/src/ch17-02-trait-objects.md src/ch17-02-trait-objects.md
+1c1
+< ## Using Trait Objects that Allow for Values of Different Types
+---
+> ## Using Trait Objects That Allow for Values of Different Types
+43,45c43,44
+< takes a *trait object*. A trait object points to both an instance of a type
+< implementing our specified trait, as well as a table used to look up trait
+< methods on that type at runtime. We create a trait object by specifying some
+---
+> takes a *trait object*. A trait object points to an instance of a type that
+> implements the trait we specify. We create a trait object by specifying some
+47,53c46,52
+< specifying the relevant trait. (We’ll talk about the reason trait objects must
+< use a pointer in Chapter 19 in the section “Dynamically Sized Types and the
+< `Sized` Trait”.) We can use trait objects in place of a generic or concrete
+< type. Wherever we use a trait object, Rust’s type system will ensure at compile
+< time that any value used in that context will implement the trait object’s
+< trait.  Consequently, we don’t need to know all the possible types at compile
+< time.
+---
+> specifying the relevant trait, and add a `dyn` keyword. (We’ll talk about the
+> reason trait objects must use a pointer in Chapter 19 in the section
+> [“Dynamically Sized Types and the `Sized` Trait.”][dynamically-sized]<!--
+> ignore -->) We can use trait objects in place of a generic or concrete type.
+> Wherever we use a trait object, Rust’s type system will ensure at compile time
+> that any value used in that context will implement the trait object’s trait.
+> Consequently, we don’t need to know all the possible types at compile time.
+82,83c81,82
+< `Box<Draw>`, which is a trait object; it’s a stand-in for any type inside a
+< `Box` that implements the `Draw` trait.
+---
+> `Box<dyn Draw>`, which is a trait object; it’s a stand-in for any type inside
+> a `Box` that implements the `Draw` trait.
+93c92
+<     pub components: Vec<Box<Draw>>,
+---
+>     pub components: Vec<Box<dyn Draw>>,
+112c111
+< #     pub components: Vec<Box<Draw>>,
+---
+> #     pub components: Vec<Box<dyn Draw>>,
+216d214
+< extern crate gui;
+275c273
+< new type and draw it because `SelectBox` implements the `Draw` type, which
+---
+> new type and draw it because `SelectBox` implements the `Draw` trait, which
+285,286c283,284
+< `Box<Draw>` as the type of the values in the `components` vector, we’ve defined
+< `Screen` to need values that we can call the `draw` method on.
+---
+> `Box<dyn Draw>` as the type of the values in the `components` vector, we’ve
+> defined `Screen` to need values that we can call the `draw` method on.
+299,300c297
+< ```rust,ignore
+< extern crate gui;
+---
+> ```rust,ignore,does_not_compile
+402c400
+<     pub components: Vec<Box<Clone>>,
+---
+>     pub components: Vec<Box<dyn Clone>>,
+412c410
+< 2 |     pub components: Vec<Box<Clone>>,
+---
+> 2 |     pub components: Vec<Box<dyn Clone>>,
+diff -r ../second-edition/second-edition/src/ch17-03-oo-design-patterns.md src/ch17-03-oo-design-patterns.md
+38d37
+< extern crate blog;
+86,88c85,87
+< `State` trait. Then `Post` will hold a trait object of `Box<State>` inside an
+< `Option` in a private field named `state`. You’ll see why the `Option` is
+< necessary in a bit.
+---
+> `State` trait. Then `Post` will hold a trait object of `Box<dyn State>`
+> inside an `Option<T>` in a private field named `state`. You’ll see why the
+> `Option<T>` is necessary in a bit.
+94c93
+<     state: Option<Box<State>>,
+---
+>     state: Option<Box<dyn State>>,
+207c206
+< #     state: Option<Box<State>>,
+---
+> #     state: Option<Box<dyn State>>,
+221c220
+<     fn request_review(self: Box<Self>) -> Box<State>;
+---
+>     fn request_review(self: Box<Self>) -> Box<dyn State>;
+227c226
+<     fn request_review(self: Box<Self>) -> Box<State> {
+---
+>     fn request_review(self: Box<Self>) -> Box<dyn State> {
+235c234
+<     fn request_review(self: Box<Self>) -> Box<State> {
+---
+>     fn request_review(self: Box<Self>) -> Box<dyn State> {
+296c295
+< #     state: Option<Box<State>>,
+---
+> #     state: Option<Box<dyn State>>,
+310,311c309,310
+<     fn request_review(self: Box<Self>) -> Box<State>;
+<     fn approve(self: Box<Self>) -> Box<State>;
+---
+>     fn request_review(self: Box<Self>) -> Box<dyn State>;
+>     fn approve(self: Box<Self>) -> Box<dyn State>;
+317c316
+< #     fn request_review(self: Box<Self>) -> Box<State> {
+---
+> #     fn request_review(self: Box<Self>) -> Box<dyn State> {
+322c321
+<     fn approve(self: Box<Self>) -> Box<State> {
+---
+>     fn approve(self: Box<Self>) -> Box<dyn State> {
+330c329
+< #     fn request_review(self: Box<Self>) -> Box<State> {
+---
+> #     fn request_review(self: Box<Self>) -> Box<dyn State> {
+335c334
+<     fn approve(self: Box<Self>) -> Box<State> {
+---
+>     fn approve(self: Box<Self>) -> Box<dyn State> {
+343c342
+<     fn request_review(self: Box<Self>) -> Box<State> {
+---
+>     fn request_review(self: Box<Self>) -> Box<dyn State> {
+347c346
+<     fn approve(self: Box<Self>) -> Box<State> {
+---
+>     fn approve(self: Box<Self>) -> Box<dyn State> {
+377c376
+< #     state: Option<Box<State>>,
+---
+> #     state: Option<Box<dyn State>>,
+400c399
+< is an `Option<Box<State>>`, when we call `as_ref`, an `Option<&Box<State>>` is
+---
+> is an `Option<Box<dyn State>>`, when we call `as_ref`, an `Option<&Box<dyn State>>` is
+411c411
+< At this point, when we call `content` on the `&Box<State>`, deref coercion will
+---
+> At this point, when we call `content` on the `&Box<dyn State>`, deref coercion will
+511c511
+< repetition (see Appendix D for more on macros).
+---
+> repetition (see the [“Macros”][macros]<!-- ignore --> section in Chapter 19).
+530a531,532
+> # use blog::Post;
+>
+670d671
+< extern crate blog;
+diff -r ../second-edition/second-edition/src/ch18-03-pattern-syntax.md src/ch18-03-pattern-syntax.md
+178c179
+< and `y` fields of the `p` variable. This example shows that the names of the
+---
+> and `y` fields of the `p` struct. This example shows that the names of the
+326c327
+< #### Destructuring References
+---
+> #### Destructuring Nested Structs & Enums
+328,338c329,332
+< When the value we’re matching to our pattern contains a reference, we need to
+< destructure the reference from the value, which we can do by specifying a `&`
+< in the pattern. Doing so lets us get a variable holding the value that the
+< reference points to rather than getting a variable that holds the reference.
+< This technique is especially useful in closures where we have iterators that
+< iterate over references, but we want to use the values in the closure rather
+< than the references.
+<
+< The example in Listing 18-16 iterates over references to `Point` instances in a
+< vector, destructuring the reference and the struct so we can perform
+< calculations on the `x` and `y` values easily.
+---
+> Up until now, all of our examples have been matching structures that were one
+> level deep. Matching can work on nested structures too!
+>
+> We can refactor the example above to support both RGB and HSV colors:
+341,368c335,338
+< # struct Point {
+< #     x: i32,
+< #     y: i32,
+< # }
+< #
+< let points = vec![
+<     Point { x: 0, y: 0 },
+<     Point { x: 1, y: 5 },
+<     Point { x: 10, y: -3 },
+< ];
+<
+< let sum_of_squares: i32 = points
+<     .iter()
+<     .map(|&Point { x, y }| x * x + y * y)
+<     .sum();
+< ```
+<
+< <span class="caption">Listing 18-16: Destructuring a reference to a struct into
+< the struct field values</span>
+<
+< This code gives us the variable `sum_of_squares` holding the value 135, which
+< is the result of squaring the `x` value and the `y` value, adding those
+< together, and then adding the result for each `Point` in the `points` vector to
+< get one number.
+<
+< If we had not included the `&` in `&Point { x, y }`, we’d get a type mismatch
+< error, because `iter` would then iterate over references to the items in the
+< vector rather than the actual values. The error would look like this:
+---
+> enum Color {
+>    Rgb(i32, i32, i32),
+>    Hsv(i32, i32, i32)
+> }
+370,379c340,345
+< ```text
+< error[E0308]: mismatched types
+<   -->
+<    |
+< 14 |         .map(|Point { x, y }| x * x + y * y)
+<    |               ^^^^^^^^^^^^ expected &Point, found struct `Point`
+<    |
+<    = note: expected type `&Point`
+<               found type `Point`
+< ```
+---
+> enum Message {
+>     Quit,
+>     Move { x: i32, y: i32 },
+>     Write(String),
+>     ChangeColor(Color),
+> }
+381,382c347,370
+< This error indicates that Rust was expecting our closure to match `&Point`, but
+< we tried to match directly to a `Point` value, not a reference to a `Point`.
+---
+> fn main() {
+>     let msg = Message::ChangeColor(Color::Hsv(0, 160, 255));
+>
+>     match msg {
+>         Message::ChangeColor(Color::Rgb(r, g, b)) => {
+>             println!(
+>                 "Change the color to red {}, green {}, and blue {}",
+>                 r,
+>                 g,
+>                 b
+>             )
+>         },
+>         Message::ChangeColor(Color::Hsv(h, s, v)) => {
+>             println!(
+>                 "Change the color to hue {}, saturation {}, and value {}",
+>                 h,
+>                 s,
+>                 v
+>             )
+>         }
+>         _ => ()
+>     }
+> }
+> ```
+420c408
+< including function parameters, as shown in Listing 18-17.
+---
+> including function parameters, as shown in Listing 18-16.
+434c422
+< <span class="caption">Listing 18-17: Using `_` in a function signature</span>
+---
+> <span class="caption">Listing 18-16: Using `_` in a function signature</span>
+451c439
+< other parts in the corresponding code we want to run. Listing 18-18 shows code
+---
+> other parts in the corresponding code we want to run. Listing 18-17 shows code
+473c461
+< <span class="caption">Listing 18-18: Using an underscore within patterns that
+---
+> <span class="caption">Listing 18-17: Using an underscore within patterns that
+489c477
+< particular values. Listing 18-19 shows an example of ignoring the second and
+---
+> particular values. Listing 18-18 shows an example of ignoring the second and
+502c490
+< <span class="caption">Listing 18-19: Ignoring multiple parts of a tuple</span>
+---
+> <span class="caption">Listing 18-18: Ignoring multiple parts of a tuple</span>
+514c502
+< 18-20, we create two unused variables, but when we run this code, we should
+---
+> 18-19, we create two unused variables, but when we run this code, we should
+526c514
+< <span class="caption">Listing 18-20: Starting a variable name with an
+---
+> <span class="caption">Listing 18-19: Starting a variable name with an
+535c523
+< distinction matters, Listing 18-21 will provide us with an error.
+---
+> distinction matters, Listing 18-20 will provide us with an error.
+547c535
+< <span class="caption">Listing 18-21: An unused variable starting with an
+---
+> <span class="caption">Listing 18-20: An unused variable starting with an
+552c540
+< doesn’t ever bind to the value. Listing 18-22 will compile without any errors
+---
+> doesn’t ever bind to the value. Listing 18-21 will compile without any errors
+565c553
+< <span class="caption">Listing 18-22: Using an underscore does not bind the
+---
+> <span class="caption">Listing 18-21: Using an underscore does not bind the
+575c563
+< explicitly matched in the rest of the pattern. In Listing 18-23, we have a
+---
+> explicitly matched in the rest of the pattern. In Listing 18-22, we have a
+594c582
+< <span class="caption">Listing 18-23: Ignoring all fields of a `Point` except
+---
+> <span class="caption">Listing 18-22: Ignoring all fields of a `Point` except
+602c590
+< The syntax `..` will expand to as many values as it needs to be. Listing 18-24
+---
+> The syntax `..` will expand to as many values as it needs to be. Listing 18-23
+619c607
+< <span class="caption">Listing 18-24: Matching only the first and last values in
+---
+> <span class="caption">Listing 18-23: Matching only the first and last values in
+627c615
+< Listing 18-25 shows an example of using `..` ambiguously, so it will not
+---
+> Listing 18-24 shows an example of using `..` ambiguously, so it will not
+644c632
+< <span class="caption">Listing 18-25: An attempt to use `..` in an ambiguous
+---
+> <span class="caption">Listing 18-24: An attempt to use `..` in an ambiguous
+665,749d652
+< ### Creating References in Patterns with `ref` and `ref mut`
+<
+< Let’s look at using `ref` to make references so ownership of the values isn’t
+< moved to variables in the pattern. Usually, when you match against a pattern,
+< the variables introduced by the pattern are bound to a value. Rust’s ownership
+< rules mean the value will be moved into the `match` or wherever you’re using
+< the pattern. Listing 18-26 shows an example of a `match` that has a pattern
+< with a variable and then usage of the entire value in the `println!` statement
+< later, after the `match`. This code will fail to compile because ownership of
+< part of the `robot_name` value is transferred to the `name` variable in the
+< pattern of the first `match` arm.
+<
+< ```rust,ignore
+< let robot_name = Some(String::from("Bors"));
+<
+< match robot_name {
+<     Some(name) => println!("Found a name: {}", name),
+<     None => (),
+< }
+<
+< println!("robot_name is: {:?}", robot_name);
+< ```
+<
+< <span class="caption">Listing 18-26: Creating a variable in a `match` arm
+< pattern takes ownership of the value</span>
+<
+< Because ownership of part of `robot_name` has been moved to `name`, we can no
+< longer use `robot_name` in the `println!` after the `match` because
+< `robot_name` no longer has ownership.
+<
+< To fix this code, we want to make the `Some(name)` pattern *borrow* that part
+< of `robot_name` rather than taking ownership. You’ve already seen that, outside
+< of patterns, the way to borrow a value is to create a reference using `&`, so
+< you might think the solution is changing `Some(name)` to `Some(&name)`.
+<
+< However, as you saw in the “Destructuring to Break Apart Values” section, the
+< syntax `&` in patterns does not *create* a reference but *matches* an existing
+< reference in the value. Because `&` already has that meaning in patterns, we
+< can’t use `&` to create a reference in a pattern.
+<
+< Instead, to create a reference in a pattern, we use the `ref` keyword before
+< the new variable, as shown in Listing 18-27.
+<
+< ```rust
+< let robot_name = Some(String::from("Bors"));
+<
+< match robot_name {
+<     Some(ref name) => println!("Found a name: {}", name),
+<     None => (),
+< }
+<
+< println!("robot_name is: {:?}", robot_name);
+< ```
+<
+< <span class="caption">Listing 18-27: Creating a reference so a pattern variable
+< does not take ownership of a value</span>
+<
+< This example will compile because the value in the `Some` variant in
+< `robot_name` is not moved into the `match`; the `match` only took a reference
+< to the data in `robot_name` rather than moving it.
+<
+< To create a mutable reference so we’re able to mutate a value matched in a
+< pattern, we use `ref mut` instead of `&mut`. The reason is, again, that in
+< patterns, the latter is for matching existing mutable references, not creating
+< new ones. Listing 18-28 shows an example of a pattern creating a mutable
+< reference.
+<
+< ```rust
+< let mut robot_name = Some(String::from("Bors"));
+<
+< match robot_name {
+<     Some(ref mut name) => *name = String::from("Another name"),
+<     None => (),
+< }
+<
+< println!("robot_name is: {:?}", robot_name);
+< ```
+<
+< <span class="caption">Listing 18-28: Creating a mutable reference to a value as
+< part of a pattern using `ref mut`</span>
+<
+< This example will compile and print `robot_name is: Some("Another name")`.
+< Because `name` is a mutable reference, we need to dereference within the match
+< arm code using the `*` operator to mutate the value.
+<
+757c660
+< The condition can use variables created in the pattern. Listing 18-29 shows a
+---
+> The condition can use variables created in the pattern. Listing 18-25 shows a
+771c674
+< <span class="caption">Listing 18-29: Adding a match guard to a pattern</span>
+---
+> <span class="caption">Listing 18-25: Adding a match guard to a pattern</span>
+790c693
+< outer variable. Listing 18-30 shows how we can use a match guard to fix this
+---
+> outer variable. Listing 18-26 shows how we can use a match guard to fix this
+810c713
+< <span class="caption">Listing 18-30: Using a match guard to test for equality
+---
+> <span class="caption">Listing 18-26: Using a match guard to test for equality
+827c730
+< 18-31 shows the precedence of combining a match guard with a pattern that uses
+---
+> 18-27 shows the precedence of combining a match guard with a pattern that uses
+842c745
+< <span class="caption">Listing 18-31: Combining multiple patterns with a match
+---
+> <span class="caption">Listing 18-27: Combining multiple patterns with a match
+873c776
+< 18-32 shows an example where we want to test that a `Message::Hello` `id` field
+---
+> 18-28 shows an example where we want to test that a `Message::Hello` `id` field
+899c802
+< <span class="caption">Listing 18-32: Using `@` to bind to a value in a pattern
+---
+> <span class="caption">Listing 18-28: Using `@` to bind to a value in a pattern
+diff -r ../second-edition/second-edition/src/ch19-00-advanced-features.md src/ch19-00-advanced-features.md
+20a21
+> * Macros: ways to define code that defines more code at compile time
+diff -r ../second-edition/second-edition/src/ch19-01-unsafe-rust.md src/ch19-01-unsafe-rust.md
+341c343
+< let slice = unsafe {
+---
+> let slice: &[i32] = unsafe {
+351c353,357
+< `slice` as though it’s a valid slice results in undefined behavior.
+---
+> `slice` as though it’s a valid slice results in undefined behavior. If we would
+> not have taken care to align `address` to 4 (the alignment of `i32`), then even
+> just calling `slice::from_raw_parts_mut` would already be undefined behavior --
+> slices must always be aligned, even if they are not used (and even if they are
+> empty).
+diff -r ../second-edition/second-edition/src/ch19-02-advanced-lifetimes.md src/ch19-02-advanced-lifetimes.md
+12a14
+> * The anonymous lifetime: making elision more obvious
+401c407
+< trait object `Box<Red>`.
+---
+> trait object `Box<dyn Red>`.
+417c423
+<     let obj = Box::new(Ball { diameter: &num }) as Box<Red>;
+---
+>     let obj = Box::new(Ball { diameter: &num }) as Box<dyn Red>;
+437,441c443,496
+< `Box<Red>` using the syntax `Box<Red + 'static>` or `Box<Red + 'a>`, depending
+< on whether the reference lives for the entire program or not. As with the other
+< bounds, the syntax adding a lifetime bound means that any implementor of the
+< `Red` trait that has references inside the type must have the same lifetime
+< specified in the trait object bounds as those references.
+---
+> `Box<dyn Red>` using the syntax `Box<dyn Red + 'static>` or `Box<dyn Red +
+> 'a>`, depending on whether the reference lives for the entire program or not.
+> As with the other bounds, the syntax adding a lifetime bound means that any
+> implementor of the `Red` trait that has references inside the type must have
+> the same lifetime specified in the trait object bounds as those references.
+>
+> ### The Anonymous Lifetime
+>
+> Say that we have a struct named `StrWrap` that’s a wrapper around a string
+> slice:
+>
+> ```rust
+> struct StrWrap<'a>(&'a str);
+> ```
+>
+> We can write a function that creates an instance of the `StrWrap` struct from a
+> string slice:
+>
+> ```rust
+> # struct StrWrap<'a>(&'a str);
+> fn wrap<'a>(string: &'a str) -> StrWrap<'a> {
+>     StrWrap(string)
+> }
+> ```
+>
+> But that’s a lot of lifetime annotations! To cut down on some of the
+> annotations, we can use the anonymous lifetime , `'_`, in the function
+> signature as shown here:
+>
+> ```rust
+> # struct StrWrap<'a>(&'a str);
+> fn wrap(string: &str) -> StrWrap<'_> {
+>     StrWrap(string)
+> }
+> ```
+>
+> The `'_` tells the compiler to use the elided lifetime. The `StrWrap` instance
+> still contains a reference, but we don’t need to specify all of the lifetime
+> annotations for the compiler to understand which references are related.
+>
+> It works in `impl` blocks too; for example, here are two ways to write an impl block that implements the `fmt::Debug` trait on the `StrWrap<'a>` struct:
+>
+> ```rust,ignore
+> // verbose
+> impl<'a> fmt::Debug for StrWrap<'a> {
+>
+> // elided
+> impl fmt::Debug for StrWrap<'_> {
+> ```
+>
+> In the verbose version, we declare the lifetime `'a` after the `impl` keyword
+> and annotate the `StrWrap` struct with the `'a` lifetime. In the elided
+> version, we used the anonymous lifetime for the `StrWrap` struct, which means
+> we don't need to declare a lifetime after `impl`.
+diff -r ../second-edition/second-edition/src/ch19-03-advanced-traits.md src/ch19-03-advanced-traits.md
+516c518
+< this case, you need to rely on the dependent trait’s also being implemented.
+---
+> this case, you need to rely on the dependent traits also being implemented.
+diff -r ../second-edition/second-edition/src/ch19-04-advanced-types.md src/ch19-04-advanced-types.md
+9,10c9,11
+< > Note: The next section assumes you’ve read the earlier section “The Newtype
+< > Pattern to Implement External Traits on External Types.”
+---
+> > Note: The next section assumes you’ve read the earlier section [“Using the
+> > Newtype Pattern to Implement External Traits on External
+> > Types.”][using-the-newtype-pattern]<!-- ignore -->
+69c72
+< Box<Fn() + Send + 'static>
+---
+> Box<dyn Fn() + Send + 'static>
+77c80
+< let f: Box<Fn() + Send + 'static> = Box::new(|| println!("hi"));
+---
+> let f: Box<dyn Fn() + Send + 'static> = Box::new(|| println!("hi"));
+79c82
+< fn takes_long_type(f: Box<Fn() + Send + 'static>) {
+---
+> fn takes_long_type(f: Box<dyn Fn() + Send + 'static>) {
+83c86
+< fn returns_long_type() -> Box<Fn() + Send + 'static> {
+---
+> fn returns_long_type() -> Box<dyn Fn() + Send + 'static> {
+96c99
+< type Thunk = Box<Fn() + Send + 'static>;
+---
+> type Thunk = Box<dyn Fn() + Send + 'static>;
+306,309c310,315
+< using the name of the trait. In Chapter 17 in the “Using Trait Objects that
+< Allow for Values of Different Types” section, we mentioned that to use traits
+< as trait objects, we must put them behind a pointer, such as `&Trait` or
+< `Box<Trait>` (`Rc<Trait>` would work too).
+---
+> using the name of the trait. In Chapter 17 in the [“Using Trait Objects That
+> Allow for Values of Different Types”]
+> [using-trait-objects-that-allow-for-values-of-different-types]<!-- ignore -->
+> section, we mentioned that to use traits as trait objects, we must put them
+> behind a pointer, such as `&dyn Trait` or `Box<dyn Trait>` (`Rc<dyn Trait>`
+> would work too).
+diff -r ../second-edition/second-edition/src/ch19-05-advanced-functions-and-closures.md src/ch19-05-advanced-functions-and-closures.md
+81,84c81,103
+< in the “Advanced Traits” section because there are multiple functions available
+< named `to_string`. Here, we’re using the `to_string` function defined in the
+< `ToString` trait, which the standard library has implemented for any type that
+< implements `Display`.
+---
+> in the [“Advanced Traits”][advanced-traits]<!-- ignore --> section because
+> there are multiple functions available named `to_string`. Here, we’re using the
+> `to_string` function defined in the `ToString` trait, which the standard
+> library has implemented for any type that implements `Display`.
+>
+> Another useful pattern exploits an implementation detail of tuple structs and
+> tuple-struct enum variants. These items use `()` as initializer syntax, which
+> looks like a function call, and they’re actually implemented as functions
+> returning an instance constructed from their arguments. They can also be called
+> as a function pointer implementing the closure traits, and so can be used
+> similarly to the above:
+>
+> ```rust
+> enum Status {
+>     Value(u32),
+>     Stop,
+> }
+>
+> let list_of_statuses: Vec<Status> =
+>     (0u32..20)
+>     .map(Status::Value)
+>     .collect();
+> ```
+127c146
+< fn returns_closure() -> Box<Fn(i32) -> i32> {
+---
+> fn returns_closure() -> Box<dyn Fn(i32) -> i32> {
+133,146c152,161
+< “Using Trait Objects That Allow for Values of Different Types” section in
+< Chapter 17.
+<
+< ## Summary
+<
+< Whew! Now you have some features of Rust in your toolbox that you won’t use
+< often, but you’ll know they’re available in very particular circumstances.
+< We’ve introduced several complex topics so that when you encounter them in
+< error message suggestions or in other peoples’ code, you’ll be able to
+< recognize these concepts and syntax. Use this chapter as a reference to guide
+< you to solutions.
+<
+< Next, we’ll put everything we’ve discussed throughout the book into practice
+< and do one more project!
+---
+> [“Using Trait Objects That Allow for Values of Different Types”]
+> [using-trait-objects-that-allow-for-values-of-different-types]<!-- ignore -->
+> section in Chapter 17.
+>
+> Next, let’s look at macros!
+diff -r ../second-edition/second-edition/src/ch20-01-single-threaded.md src/ch20-01-single-threaded.md
+29c29
+< $ cargo new hello --bin
+---
+> $ cargo new hello
+369c369
+< use std::fs::File;
+---
+> use std::fs;
+376,379c376
+<     let mut file = File::open("hello.html").unwrap();
+<
+<     let mut contents = String::new();
+<     file.read_to_string(&mut contents).unwrap();
+---
+>     let contents = fs::read_to_string("hello.html").unwrap();
+424c421
+< # use std::fs::File;
+---
+> # use std::fs;
+434,437c431
+<         let mut file = File::open("hello.html").unwrap();
+<
+<         let mut contents = String::new();
+<         file.read_to_string(&mut contents).unwrap();
+---
+>         let contents = fs::read_to_string("hello.html").unwrap();
+479c473
+< # use std::fs::File;
+---
+> # use std::fs;
+486,489c480
+<     let mut file = File::open("404.html").unwrap();
+<     let mut contents = String::new();
+<
+<     file.read_to_string(&mut contents).unwrap();
+---
+>     let contents = fs::read_to_string("404.html").unwrap();
+547c538
+< # use std::fs::File;
+---
+> # use std::fs;
+563,566c554
+<     let mut file = File::open(filename).unwrap();
+<     let mut contents = String::new();
+<
+<     file.read_to_string(&mut contents).unwrap();
+---
+>     let contents = fs::read_to_string(filename).unwrap();
+diff -r ../second-edition/second-edition/src/ch20-02-multithreaded.md src/ch20-02-multithreaded.md
+247d246
+< extern crate hello;
+1128a1133,1137
+> > Note: if you open */sleep* in multiple browser windows simultaneously, they
+> > might load one at a time in 5 second intervals. Some web browsers execute
+> > multiple instances of the same request sequentially for caching reasons. This
+> > limitation is not caused by our web server.
+>
+diff -r ../second-edition/second-edition/src/ch20-03-graceful-shutdown-and-cleanup.md src/ch20-03-graceful-shutdown-and-cleanup.md
+386d385
+< extern crate hello;
+392c391
+< use std::fs::File;
+---
+> use std::fs;
+427,430c426
+<      let mut file = File::open(filename).unwrap();
+<      let mut contents = String::new();
+<
+<      file.read_to_string(&mut contents).unwrap();
+---
+>      let contents = fs::read_to_string(filename).unwrap();
+467c463
+< type Job = Box<FnBox + Send + 'static>;
+---
+> type Job = Box<dyn FnBox + Send + 'static>;
+diff -r ../second-edition/second-edition/src/foreword.md src/foreword.md
+27c27
+< that you won’t accidentally introduce crashes or exploits.
+---
+> that you won’t accidentally introduce crashes or vulnerabilities.
+Binary files ../second-edition/second-edition/src/img/trpl14-04.png and src/img/trpl14-04.png differ
